@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mobilidade Urbana no Rio de Janeiro (1995–2025) | Análise de Dados</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --surface: #ffffff;
+      --text: #182230;
+      --muted: #526071;
+      --primary: #0f4c81;
+      --primary-soft: #e8f1f8;
+      --accent: #0d9488;
+      --warn: #b45309;
+      --warn-soft: #fef3c7;
+      --border: #dce3ec;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    header {
+      background: linear-gradient(135deg, #0b3954 0%, #0f4c81 55%, #19647e 100%);
+      color: #fff;
+      padding: 2.5rem 1.5rem 2.25rem;
+    }
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 1.25rem;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      padding: 0.25rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      letter-spacing: 0.02em;
+      margin-bottom: 0.85rem;
+    }
+    h1 {
+      margin: 0 0 0.65rem;
+      font-size: clamp(1.65rem, 3.2vw, 2.35rem);
+      line-height: 1.22;
+    }
+    .subtitle {
+      margin: 0;
+      max-width: 780px;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 1.02rem;
+    }
+    main {
+      padding: 2rem 0 3.5rem;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.15rem 1.25rem;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    }
+    .kpi-label {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.35rem;
+    }
+    .kpi-value {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1.2;
+    }
+    .kpi-note {
+      font-size: 0.84rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+    }
+    section.card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.6rem 1.75rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+    }
+    h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1.35rem;
+      color: var(--primary);
+      border-bottom: 2px solid var(--primary-soft);
+      padding-bottom: 0.4rem;
+    }
+    h3 {
+      margin: 1.15rem 0 0.45rem;
+      font-size: 1.08rem;
+      color: var(--text);
+    }
+    .callout {
+      background: var(--warn-soft);
+      border-left: 4px solid var(--warn);
+      padding: 0.9rem 1.1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+      font-size: 0.94rem;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0.9rem 0 1rem;
+      font-size: 0.92rem;
+    }
+    select, button {
+      font: inherit;
+      padding: 0.42rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+    }
+    button.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .chart-box {
+      position: relative;
+      height: 360px;
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    th, td {
+      padding: 0.55rem 0.7rem;
+      text-align: right;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    th:first-child, td:first-child {
+      text-align: center;
+      font-weight: 600;
+    }
+    th {
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 600;
+    }
+    tbody tr:hover {
+      background: #f8fafc;
+    }
+    footer {
+      text-align: center;
+      padding: 1.75rem 1rem 2.5rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+    code {
+      background: #f1f5f9;
+      padding: 0.12rem 0.38rem;
+      border-radius: 5px;
+      font-size: 0.88em;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="badge">Sistemas de Informação • Análise e Visualização de Dados com Python</div>
+      <h1>Mobilidade Urbana no Município do Rio de Janeiro (1995–2025)</h1>
+      <p class="subtitle">
+        Série histórica de 31 anos do movimento médio diário de passageiros (em milhares/dia) segundo a
+        Tabela 728 (Data.Rio): transição do <em>modal share</em>, impacto da pandemia de COVID-19 e
+        ciclo de megaeventos.
+      </p>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Pico Histórico (2015)</div>
+        <div class="kpi-value">5.306,66 mil/dia</div>
+        <div class="kpi-note">Ônibus: 3.633,09 • Metrô: 840,67 • Trem: 658,38</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Vale da Pandemia (2021)</div>
+        <div class="kpi-value">2.049,92 mil/dia</div>
+        <div class="kpi-note">Índice 47,05 frente a 2019 (4.357,18 mil/dia = 100)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Nível em 2025</div>
+        <div class="kpi-value">2.910,40 mil/dia</div>
+        <div class="kpi-note">Índice 66,80 vs. 2019 • Ônibus 63,31% • Ferroviário 33,05%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Participação dos Ônibus</div>
+        <div class="kpi-value">82,92% → 63,31%</div>
+        <div class="kpi-note">Queda de 19,61 p.p. entre 1995 e 2025</div>
+      </div>
+    </div>
+
+    <section class="card" id="resumo-metodologia">
+      <h2>1. Introdução e Metodologia de Tratamento</h2>
+      <p>
+        O conjunto de dados analisado provém da <strong>Tabela 728 do Data.Rio</strong>, abrangendo 31 anos
+        (1995 a 2025) e seis modais: <strong>Ônibus</strong> (rodoviário), <strong>Metrô</strong>,
+        <strong>Trem</strong> e <strong>Bonde</strong> (agrupados como ferroviário), além de
+        <strong>Hidroviário</strong> e <strong>Aeroviário</strong>, expressos em milhares de passageiros por dia.
+      </p>
+      <div class="callout">
+        <strong>Tratamento de valores ausentes (<code>NaN</code>):</strong> Na planilha original, os anos de
+        <strong>2012, 2013 e 2014</strong> apresentam <code>"..."</code> para os bondes de Santa Teresa,
+        correspondendo ao período de paralisação após o acidente de agosto de 2011 até a retomada em julho
+        de 2015. No pipeline (<code>src/etl.py</code>), esses registros são convertidos explicitamente para
+        <code>NaN</code> sem imputação artificial.
+      </div>
+    </section>
+
+    <section class="card" id="rq1">
+      <h2>2. RQ1 — Transição de <em>Modal Share</em> (1995–2025)</h2>
+      <p>
+        Entre 1995 e 2025, o transporte por ônibus reduziu sua participação relativa de <strong>82,92%</strong>
+        para <strong>63,31%</strong> (com mínimo de <strong>60,71%</strong> em 2021), enquanto o grupo ferroviário
+        passou de <strong>14,83%</strong> (588,91 mil/dia) em 1995 para <strong>33,88%</strong> em 2019 e
+        <strong>33,05%</strong> (961,93 mil/dia) em 2025.
+      </p>
+      <div class="controls">
+        <span>Modo de visualização:</span>
+        <button id="btnSharePct" class="active" type="button">Participação (%)</button>
+        <button id="btnModalAbs" type="button">Passageiros/dia (mil)</button>
+      </div>
+      <div class="chart-box">
+        <canvas id="chartRq1"></canvas>
+      </div>
+    </section>
+
+    <section class="card" id="rq2">
+      <h2>3. RQ2 — Choque da Pandemia (2020–2021) e Recuperação até 2025</h2>
+      <p>
+        Tomando <strong>2019 = 100</strong>, a demanda agregada caiu para <strong>53,30</strong> em 2020
+        (2.322,26 mil/dia) e atingiu o piso de <strong>47,05</strong> em 2021 (2.049,92 mil/dia). Até 2025,
+        o total geral alcançou o índice <strong>66,80</strong> (2.910,40 mil/dia), com recuperação mais
+        acentuada no modal aeroviário (<strong>107,66</strong>) e nos bondes (<strong>172,83</strong>).
+      </p>
+      <div class="controls">
+        <label for="selectModalIdx">Destacar modal no índice (2019 = 100):</label>
+        <select id="selectModalIdx">
+          <option value="all">Todos os principais modais</option>
+          <option value="idx_onibus">Ônibus</option>
+          <option value="idx_metro">Metrô</option>
+          <option value="idx_trem">Trem</option>
+          <option value="idx_aeroviario">Aeroviário</option>
+          <option value="idx_hidroviario">Hidroviário</option>
+        </select>
+      </div>
+      <div class="chart-box">
+        <canvas id="chartRq2"></canvas>
+      </div>
+    </section>
+
+    <section class="card" id="rq3">
+      <h2>4. RQ3 — Ciclo de Megaeventos (2007–2016) e Série Completa</h2>
+      <p>
+        No ciclo entre o Pan-Americano de 2007 (<strong>3.137,51 mil/dia</strong>), a Copa do Mundo de 2014
+        (<strong>5.061,44 mil/dia</strong>) e os Jogos Olímpicos/Paralímpicos de 2016 (<strong>5.263,68 mil/dia</strong>),
+        a demanda agregada expandiu-se até atingir seu máximo histórico em <strong>2015</strong>
+        (<strong>5.306,66 mil/dia</strong>), seguida por retração gradual de 2017 a 2019 antes do choque de 2020.
+      </p>
+      <div class="chart-box">
+        <canvas id="chartRq3"></canvas>
+      </div>
+
+      <h3>Tabela de Referência por Marcos Anuais (mil passageiros/dia)</h3>
+      <div class="table-wrap">
+        <table id="tabelaMarcos">
+          <thead>
+            <tr>
+              <th>Ano</th>
+              <th>Ônibus</th>
+              <th>Metrô</th>
+              <th>Trem</th>
+              <th>Bonde</th>
+              <th>Hidroviário</th>
+              <th>Aeroviário</th>
+              <th>Total Geral</th>
+              <th>Índice (2019=100)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" id="fair">
+      <h2>5. Disponibilidade dos Dados e Declaração FAIR</h2>
+      <p>
+        Este projeto adota práticas <strong>FAIR</strong> (<em>Findable, Accessible, Interoperable, Reusable</em>):
+        dados brutos em <code>data/raw/728.xls</code>, metadados e dicionário de variáveis em
+        <code>data/data_dictionary.md</code>, pipeline reprodutível em <code>src/etl.py</code> e análise
+        exploratória em <code>notebooks/analise_exploratoria.ipynb</code>. Código sob licença <strong>MIT</strong>
+        e dados/textos sob <strong>CC-BY 4.0</strong> (atribuição a Data.Rio).
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    Projeto Acadêmico • Linguagem de Programação: Análise e Visualização de Dados com Python • Fonte: Data.Rio (Tabela 728)
+  </footer>
+
+  <script>
+    const D = {"anos": [1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025], "onibus": [3292.15, 3261.48, 3222.03, 3242.21, 2968.42, 2789.17, 2608.82, 2460.07, 2286.89, 2173.88, 2112.15, 2251.37, 2168.01, 2242.31, 2303.37, 2356.33, 2551.5, 3288.77, 3311.78, 3462.78, 3633.09, 3502.78, 3221.05, 2982.96, 2762.54, 1516.69, 1244.47, 1665.72, 1757.08, 1844.87, 1842.62], "metro": [323.0, 352.0, 269.0, 358.1, 398.83, 421.51, 414.88, 415.37, 424.91, 439.56, 463.57, 489.4, 537.65, 547.12, 547.91, 587.61, 639.92, 669.0, 687.46, 809.16, 840.67, 942.39, 864.68, 857.9, 883.0, 410.0, 425.0, 588.0, 651.0, 631.0, 634.0], "trem": [265.61, 222.6, 157.87, 130.01, 175.4, 220.56, 219.86, 239.11, 275.77, 261.35, 267.63, 289.78, 325.48, 488.98, 496.23, 499.0, 515.9, 528.33, 557.19, 606.01, 658.38, 661.22, 589.04, 598.0, 592.0, 345.51, 318.39, 348.0, 311.0, 309.0, 326.0], "bonde": [0.3, 0.17, 0.4, 0.45, 0.76, 0.81, 0.76, 1.77, 2.32, 2.61, 1.76, 1.27, 1.58, 1.71, 1.64, 1.6, 0.86, null, null, null, 0.33, 0.82, 0.67, 0.84, 1.11, 0.37, 0.44, 1.12, 1.36, 1.56, 1.93], "hidroviario": [71.13, 73.5, 72.7, 66.78, 67.29, 68.35, 73.86, 58.97, 57.13, 55.73, 56.07, 59.63, 67.4, 63.6, 65.0, 71.95, 106.71, 105.77, 108.21, 108.39, 101.29, 87.0, 55.0, 52.78, 56.46, 23.0, 31.78, 27.82, 48.0, 34.9, 39.03], "aeroviario": [18.15, 19.15, 22.51, 25.43, 25.79, 28.27, 29.77, 32.05, 27.55, 30.02, 33.66, 34.18, 37.39, 39.63, 46.69, 55.26, 64.68, 73.01, 72.51, 75.11, 72.9, 69.47, 70.42, 66.76, 62.07, 26.7, 29.84, 44.56, 53.57, 57.21, 66.83], "ferroviario_total": [588.91, 574.76, 427.28, 488.56, 574.99, 642.89, 635.49, 656.26, 703.0, 703.51, 732.96, 780.44, 864.71, 1037.8, 1045.78, 1088.21, 1156.69, 1197.33, 1244.65, 1415.17, 1499.38, 1604.43, 1454.39, 1456.75, 1476.11, 755.88, 743.83, 937.12, 963.36, 941.56, 961.93], "total_geral": [3970.33, 3928.9, 3744.52, 3822.98, 3636.5, 3528.68, 3347.94, 3207.35, 3074.58, 2963.14, 2934.85, 3125.61, 3137.51, 3383.34, 3460.84, 3571.75, 3879.59, 4664.88, 4737.15, 5061.44, 5306.66, 5263.68, 4800.86, 4559.25, 4357.18, 2322.26, 2049.92, 2675.22, 2822.01, 2878.54, 2910.4], "share_onibus": [82.92, 83.01, 86.05, 84.81, 81.63, 79.04, 77.92, 76.7, 74.38, 73.36, 71.97, 72.03, 69.1, 66.28, 66.56, 65.97, 65.77, 70.5, 69.91, 68.41, 68.46, 66.55, 67.09, 65.43, 63.4, 65.31, 60.71, 62.26, 62.26, 64.09, 63.31], "share_ferroviario": [14.83, 14.63, 11.41, 12.78, 15.81, 18.22, 18.98, 20.46, 22.86, 23.74, 24.97, 24.97, 27.56, 30.67, 30.22, 30.47, 29.81, 25.67, 26.27, 27.96, 28.25, 30.48, 30.29, 31.95, 33.88, 32.55, 36.29, 35.03, 34.14, 32.71, 33.05], "share_metro": [8.14, 8.96, 7.18, 9.37, 10.97, 11.95, 12.39, 12.95, 13.82, 14.83, 15.8, 15.66, 17.14, 16.17, 15.83, 16.45, 16.49, 14.34, 14.51, 15.99, 15.84, 17.9, 18.01, 18.82, 20.27, 17.66, 20.73, 21.98, 23.07, 21.92, 21.78], "share_trem": [6.69, 5.67, 4.22, 3.4, 4.82, 6.25, 6.57, 7.46, 8.97, 8.82, 9.12, 9.27, 10.37, 14.45, 14.34, 13.97, 13.3, 11.33, 11.76, 11.97, 12.41, 12.56, 12.27, 13.12, 13.59, 14.88, 15.53, 13.01, 11.02, 10.73, 11.2], "share_hidroviario": [1.79, 1.87, 1.94, 1.75, 1.85, 1.94, 2.21, 1.84, 1.86, 1.88, 1.91, 1.91, 2.15, 1.88, 1.88, 2.01, 2.75, 2.27, 2.28, 2.14, 1.91, 1.65, 1.15, 1.16, 1.3, 0.99, 1.55, 1.04, 1.7, 1.21, 1.34], "share_aeroviario": [0.46, 0.49, 0.6, 0.67, 0.71, 0.8, 0.89, 1.0, 0.9, 1.01, 1.15, 1.09, 1.19, 1.17, 1.35, 1.55, 1.67, 1.57, 1.53, 1.48, 1.37, 1.32, 1.47, 1.46, 1.42, 1.15, 1.46, 1.67, 1.9, 1.99, 2.3], "share_bonde": [0.01, 0.0, 0.01, 0.01, 0.02, 0.02, 0.02, 0.06, 0.08, 0.09, 0.06, 0.04, 0.05, 0.05, 0.05, 0.04, 0.02, null, null, null, 0.01, 0.02, 0.01, 0.02, 0.03, 0.02, 0.02, 0.04, 0.05, 0.05, 0.07], "idx_total": [91.12, 90.17, 85.94, 87.74, 83.46, 80.99, 76.84, 73.61, 70.56, 68.01, 67.36, 71.73, 72.01, 77.65, 79.43, 81.97, 89.04, 107.06, 108.72, 116.16, 121.79, 120.8, 110.18, 104.64, 100.0, 53.3, 47.05, 61.4, 64.77, 66.06, 66.8], "idx_onibus": [119.17, 118.06, 116.63, 117.36, 107.45, 100.96, 94.44, 89.05, 82.78, 78.69, 76.46, 81.5, 78.48, 81.17, 83.38, 85.3, 92.36, 119.05, 119.88, 125.35, 131.51, 126.8, 116.6, 107.98, 100.0, 54.9, 45.05, 60.3, 63.6, 66.78, 66.7], "idx_metro": [36.58, 39.86, 30.46, 40.55, 45.17, 47.74, 46.99, 47.04, 48.12, 49.78, 52.5, 55.42, 60.89, 61.96, 62.05, 66.55, 72.47, 75.76, 77.85, 91.64, 95.21, 106.73, 97.92, 97.16, 100.0, 46.43, 48.13, 66.59, 73.73, 71.46, 71.8], "idx_trem": [44.87, 37.6, 26.67, 21.96, 29.63, 37.26, 37.14, 40.39, 46.58, 44.15, 45.21, 48.95, 54.98, 82.6, 83.82, 84.29, 87.15, 89.25, 94.12, 102.37, 111.21, 111.69, 99.5, 101.01, 100.0, 58.36, 53.78, 58.78, 52.53, 52.2, 55.07], "idx_aeroviario": [29.24, 30.86, 36.27, 40.97, 41.56, 45.54, 47.96, 51.64, 44.39, 48.36, 54.23, 55.06, 60.24, 63.84, 75.22, 89.02, 104.21, 117.63, 116.81, 121.0, 117.44, 111.93, 113.46, 107.56, 100.0, 43.01, 48.08, 71.79, 86.3, 92.17, 107.66], "idx_hidroviario": [125.97, 130.18, 128.76, 118.27, 119.18, 121.06, 130.81, 104.43, 101.19, 98.7, 99.3, 105.61, 119.37, 112.64, 115.12, 127.42, 189.0, 187.32, 191.64, 191.96, 179.4, 154.08, 97.41, 93.47, 100.0, 40.73, 56.28, 49.27, 85.01, 61.81, 69.13], "idx_bonde": [26.82, 15.04, 36.15, 40.59, 67.98, 72.78, 67.83, 159.21, 208.02, 234.33, 157.9, 113.63, 142.01, 153.05, 147.43, 143.56, 77.54, null, null, null, 29.86, 73.42, 60.13, 75.79, 100.0, 33.33, 39.84, 100.88, 122.24, 140.22, 172.83]};
+
+    const ctx1 = document.getElementById("chartRq1").getContext("2d");
+    const chartRq1 = new Chart(ctx1, {
+      type: "line",
+      data: {
+        labels: D.anos,
+        datasets: [
+          { label: "Ônibus (%)", data: D.share_onibus, borderColor: "#0f4c81", backgroundColor: "rgba(15,76,129,0.12)", tension: 0.25 },
+          { label: "Metrô (%)", data: D.share_metro, borderColor: "#0d9488", backgroundColor: "rgba(13,148,136,0.12)", tension: 0.25 },
+          { label: "Trem (%)", data: D.share_trem, borderColor: "#d97706", backgroundColor: "rgba(217,119,6,0.12)", tension: 0.25 },
+          { label: "Hidroviário (%)", data: D.share_hidroviario, borderColor: "#2563eb", backgroundColor: "rgba(37,99,235,0.12)", tension: 0.25 },
+          { label: "Aeroviário (%)", data: D.share_aeroviario, borderColor: "#7c3aed", backgroundColor: "rgba(124,58,237,0.12)", tension: 0.25 },
+          { label: "Bonde (%)", data: D.share_bonde, borderColor: "#dc2626", backgroundColor: "rgba(220,38,38,0.12)", spanGaps: false, tension: 0.25 }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false } }
+    });
+
+    function setRq1Mode(mode) {
+      const isPct = mode === "pct";
+      document.getElementById("btnSharePct").classList.toggle("active", isPct);
+      document.getElementById("btnModalAbs").classList.toggle("active", !isPct);
+      const map = isPct
+        ? [D.share_onibus, D.share_metro, D.share_trem, D.share_hidroviario, D.share_aeroviario, D.share_bonde]
+        : [D.onibus, D.metro, D.trem, D.hidroviario, D.aeroviario, D.bonde];
+      const suffix = isPct ? "(%)" : "(mil/dia)";
+      const names = ["Ônibus", "Metrô", "Trem", "Hidroviário", "Aeroviário", "Bonde"];
+      chartRq1.data.datasets.forEach((ds, idx) => {
+        ds.data = map[idx];
+        ds.label = `${names[idx]} ${suffix}`;
+      });
+      chartRq1.update();
+    }
+    document.getElementById("btnSharePct").addEventListener("click", () => setRq1Mode("pct"));
+    document.getElementById("btnModalAbs").addEventListener("click", () => setRq1Mode("abs"));
+
+    const allIdxSeries = [
+      { key: "idx_total", label: "Total Geral (2019=100)", data: D.idx_total, color: "#0f4c81" },
+      { key: "idx_onibus", label: "Ônibus (2019=100)", data: D.idx_onibus, color: "#d97706" },
+      { key: "idx_metro", label: "Metrô (2019=100)", data: D.idx_metro, color: "#0d9488" },
+      { key: "idx_trem", label: "Trem (2019=100)", data: D.idx_trem, color: "#dc2626" },
+      { key: "idx_aeroviario", label: "Aeroviário (2019=100)", data: D.idx_aeroviario, color: "#7c3aed" },
+      { key: "idx_hidroviario", label: "Hidroviário (2019=100)", data: D.idx_hidroviario, color: "#2563eb" }
+    ];
+
+    const ctx2 = document.getElementById("chartRq2").getContext("2d");
+    const chartRq2 = new Chart(ctx2, {
+      type: "line",
+      data: {
+        labels: D.anos,
+        datasets: allIdxSeries.map(s => ({
+          label: s.label,
+          data: s.data,
+          borderColor: s.color,
+          borderWidth: s.key === "idx_total" ? 2.8 : 1.8,
+          tension: 0.2
+        }))
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        scales: { x: { min: 2015, max: 2025 } }
+      }
+    });
+
+    document.getElementById("selectModalIdx").addEventListener("change", (e) => {
+      const val = e.target.value;
+      chartRq2.data.datasets = val === "all"
+        ? allIdxSeries.map(s => ({
+            label: s.label,
+            data: s.data,
+            borderColor: s.color,
+            borderWidth: s.key === "idx_total" ? 2.8 : 1.8,
+            tension: 0.2
+          }))
+        : [
+            { label: "Total Geral (2019=100)", data: D.idx_total, borderColor: "#0f4c81", borderWidth: 2.5, tension: 0.2 },
+            ...allIdxSeries.filter(s => s.key === val).map(s => ({
+              label: s.label, data: s.data, borderColor: s.color, borderWidth: 2.8, tension: 0.2
+            }))
+          ];
+      chartRq2.update();
+    });
+
+    const ctx3 = document.getElementById("chartRq3").getContext("2d");
+    new Chart(ctx3, {
+      type: "bar",
+      data: {
+        labels: D.anos,
+        datasets: [
+          { label: "Ônibus (mil/dia)", data: D.onibus, backgroundColor: "rgba(15, 76, 129, 0.78)" },
+          { label: "Ferroviário Total (mil/dia)", data: D.ferroviario_total, backgroundColor: "rgba(13, 148, 136, 0.78)" },
+          { label: "Hidro + Aero (mil/dia)", data: D.hidroviario.map((h, i) => +(h + D.aeroviario[i]).toFixed(2)), backgroundColor: "rgba(217, 119, 6, 0.78)" }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        scales: { x: { stacked: true }, y: { stacked: true } }
+      }
+    });
+
+    const marcos = [1995, 2000, 2007, 2012, 2014, 2015, 2016, 2019, 2020, 2021, 2025];
+    const tbody = document.querySelector("#tabelaMarcos tbody");
+    marcos.forEach(ano => {
+      const i = D.anos.indexOf(ano);
+      if (i === -1) return;
+      const fmt = v => (v === null || v === undefined ? "—" : v.toFixed(2));
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${ano}</td>
+        <td>${fmt(D.onibus[i])}</td>
+        <td>${fmt(D.metro[i])}</td>
+        <td>${fmt(D.trem[i])}</td>
+        <td>${fmt(D.bonde[i])}</td>
+        <td>${fmt(D.hidroviario[i])}</td>
+        <td>${fmt(D.aeroviario[i])}</td>
+        <td><strong>${fmt(D.total_geral[i])}</strong></td>
+        <td>${fmt(D.idx_total[i])}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  </script>
+</body>
+</html>
