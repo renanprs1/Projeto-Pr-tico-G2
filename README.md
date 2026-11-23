@@ -51,3 +51,19 @@ Este projeto investiga a evolução do movimento médio diário de passageiros n
 └── docs/
     ├── index.html
     └── assets/
+
+# 1. Clonar o repositório
+git clone [https://github.com/](https://github.com/)<seu-usuario>/<nome-do-repositorio>.git
+cd <nome-do-repositorio>
+
+# 2. Criar e ativar o ambiente virtual
+python -m venv .venv
+source .venv/bin/activate        # Linux/macOS
+# .venv\Scripts\activate         # Windows
+
+# 3. Instalar dependências congeladas
+pip install -r requirements.txt
+
+# 4. Executar o pipeline determinístico de ETL
+python -m src.etl
+
