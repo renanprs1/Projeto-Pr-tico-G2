@@ -1,0 +1,28 @@
+# Dicionário de Dados (`data/processed/passageiros_rio_1995_2025`)
+
+* **Arquivo de Origem:** `data/raw/728.xls` (Aba `T 728`, linhas 8 a 38)
+* **Granularidade:** Anual (1 registro por ano civil, de 1995 a 2025; total de 31 observações)
+* **Unidade Base:** Milhares de passageiros transportados por dia ($\times 1.000$)
+* **Codificação e Formatos de Saída:** UTF-8 (`.csv.gz`) e Apache Parquet (`.parquet`)
+
+## Variáveis Primárias (Extraídas da Fonte Original)
+
+| Variável | Tipo Primitivo | Formato / Unidade | Descrição de Negócio e Pesquisa | Tratamento de Inconsistências |
+| :--- | :--- | :--- | :--- | :--- |
+| `ano` | `int64` | `AAAA` (1995–2025) | Ano de referência da série histórica anual. | Extraído da primeira coluna (`Data.Rio`), convertido para inteiro estrito. |
+| `onibus_mil` | `float64` | Passageiros/dia ($\times 10^3$) | Movimento médio diário no transporte rodoviário urbano por ônibus (SMTU). | Convertido de numérico misto para `float64` sem perdas. |
+| `metro_mil` | `float64` | Passageiros/dia ($\times 10^3$) | Movimento médio diário no sistema metroviário (Metrô-RJ / Opportrans / MetrôRio). | Convertido para `float64`. |
+| `trem_mil` | `float64` | Passageiros/dia ($\times 10^3$) | Movimento médio diário nos trens urbanos (Flumitrens / SuperVia). | Convertido para `float64`. |
+| `bonde_mil` | `float64` | Passageiros/dia ($\times 10^3$) | Movimento médio diário nos Bondes de Santa Teresa. | O marcador textual `"..."` nos anos **2012, 2013 e 2014** foi convertido para `NaN` (`float64`), refletindo a paralisação após o acidente de agosto/2011 até a retomada em julho/2015. |
+| `hidroviario_mil` | `float64` | Passageiros/dia ($\times 10^3$) | Movimento médio diário no transporte aquaviário/barcas (TRANSTUR / Barcas S.A. / CONERJ). | Convertido para `float64`. |
+| `aeroviario_mil` | `float64` | Passageiros/dia ($\times 10^3$) | Movimento médio diário de embarques/desembarques nos aeroportos do município (INFRAERO). | Convertido para `float64`. |
+
+## Variáveis Derivadas (Engenharia de Atributos — `src/etl.py`)
+
+| Variável | Tipo Primitivo | Formato / Unidade | Fórmula / Regra de Cálculo | Finalidade Analítica |
+| :--- | :--- | :--- | :--- | :--- |
+| `ferroviario_total_mil` | `float64` | Passageiros/dia ($\times 10^3$) | `metro_mil + trem_mil + bonde_mil` (ignorando `NaN` de bonde em 2012–2014) | Consolida o subtotal do grupo ferroviário definido no cabeçalho original da Tabela 728. |
+| `total_geral_mil` | `float64` | Passageiros/dia ($\times 10^3$) | Soma dos 6 modais no ano | Representa a demanda média diária agregada do sistema de mobilidade do Rio de Janeiro. |
+| `share_<modal>_pct` | `float64` | Percentual (`0.0` a `100.0`) | `(modal_mil / total_geral_mil) * 100` para cada um dos 6 modais | Mede a participação relativa (*modal share*) anual de cada modal (responde à **RQ1**). |
+| `share_ferroviario_pct` | `float64` | Percentual (`0.0` a `100.0`) | `(ferroviario_total_mil / total_geral_mil) * 100` | Mede o peso conjunto dos sistemas sobre trilhos frente ao transporte rodoviário. |
+| `idx_2019_<modal>` | `float64` | Número-índice (`2019 = 100.0`) | `(valor_ano / valor_2019) * 100` para os 6 modais e `total_geral_mil` | Avalia a intensidade da queda na pandemia (2020–2021) e o grau de recuperação até 2025 (responde à **RQ2**). |
